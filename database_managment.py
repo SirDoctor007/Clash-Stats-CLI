@@ -14,11 +14,21 @@ PRIMARY FUNCTIONS
 '''
 
 
+def connect():
+    config = configparser.ConfigParser()
+    config.read(Path('Config', 'database.ini'))
+
+    database = Path(config['INFO']['database_name'])
+
+    conn = sqlite3.connect(database)
+    return conn
+
+
 def create_database():
     config = configparser.ConfigParser()
-    config.read('config.ini')
+    config.read(Path('Config', 'database.ini'))
 
-    database = Path(config['DEFAULT']['database'])
+    database = Path(config['INFO']['database_name'])
 
     if Path.is_file(database):
         question = [
@@ -112,11 +122,7 @@ def insert_clan_war(clan_war_obj):
         print('This war has already been recorded. Aborting')
         return -1
 
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-
-    database = Path(config['DEFAULT']['database'])
-    conn = sqlite3.connect(database)
+    conn = connect()
     c = conn.cursor()
 
     # Inserts the details of the clan war
@@ -174,12 +180,7 @@ def insert_clan_war(clan_war_obj):
     return 0
 
 def get_war_details(war_id):
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-
-    database = config['DEFAULT']['database']
-
-    conn = sqlite3.connect(database)
+    conn = connect()
     c = conn.cursor()
 
     c.execute('''SELECT team_size, start_time, end_time, home_clan_name, home_clan_level, home_clan_attacks, home_clan_stars,
@@ -210,12 +211,7 @@ def get_war_details(war_id):
 
 
 def get_clan_members_attacks(war_id):
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-
-    database = config['DEFAULT']['database']
-
-    conn = sqlite3.connect(database)
+    conn = connect()
     c = conn.cursor()
 
     c.execute('''SELECT player_name, townhall_level, map_position, attacks, stars, total_destruction
@@ -242,12 +238,7 @@ def get_clan_members_attacks(war_id):
 
 
 def get_player_war_data(player_tag):
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-
-    database = config['DEFAULT']['database']
-
-    conn = sqlite3.connect(database)
+    conn = connect()
     c = conn.cursor()
     c.execute('''SELECT player_tag, player_name, attacks, stars, total_destruction
                    FROM clan_war_members
@@ -294,12 +285,7 @@ def get_player_war_data(player_tag):
 
 # Determines if the clan war has already been recorded
 def get_recorded_status(start_time):
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-
-    database = config['DEFAULT']['database']
-
-    conn = sqlite3.connect(database)
+    conn = connect()
     c = conn.cursor()
 
     c.execute('''SELECT start_time FROM clan_war''')
@@ -318,12 +304,7 @@ def get_recorded_status(start_time):
 
 
 def get_next_war_id():
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-
-    database = Path(config['DEFAULT']['database'])
-
-    conn = sqlite3.connect(database)
+    conn = connect()
     c = conn.cursor()
 
     c.execute('''SELECT MAX(war_id) FROM clan_war''')
@@ -338,12 +319,7 @@ def get_next_war_id():
 
 
 def get_war_ids():
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-
-    database = Path(config['DEFAULT']['database'])
-
-    conn = sqlite3.connect(database)
+    conn = connect()
     c = conn.cursor()
 
     c.execute('''SELECT war_id, start_time, enemy_clan_name FROM clan_war''')
@@ -375,12 +351,7 @@ def remove_clan_war():
         except ValueError:
             print('Not a valid answer.')
 
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-
-    database = config['DEFAULT']['database']
-
-    conn = sqlite3.connect(database)
+    conn = connect()
     c = conn.cursor()
 
     c.execute('''DELETE FROM clan_war WHERE war_id = ?''', (wars[user_ans]['war_id'],))
@@ -392,12 +363,7 @@ def remove_clan_war():
 
 
 def get_clan_wars():
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-
-    database = Path(config['DEFAULT']['database'])
-
-    conn = sqlite3.connect(database)
+    conn = connect()
     c = conn.cursor()
 
     c.execute('''SELECT war_id, team_size, start_time, home_clan_name, enemy_clan_name FROM clan_war''')
@@ -492,11 +458,7 @@ def get_clan_wars():
 
 
 def insert_players_from_clan(members, verbose=False):
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-
-    database = config['DEFAULT']['database']
-    conn = sqlite3.connect(database)
+    conn = connect()
     c = conn.cursor()
 
     c.execute('''SELECT player_tag, player_name FROM players''')
@@ -544,11 +506,7 @@ def insert_players_from_clan(members, verbose=False):
 
 
 def insert_player_record_data(player_data, verbose=False):
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-
-    database = config['DEFAULT']['database']
-    conn = sqlite3.connect(database)
+    conn = connect()
     c = conn.cursor()
     insert_string = 'INSERT INTO player_record VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
     try:
@@ -627,12 +585,7 @@ def update_tracked_players():
 
     answers = prompt(questions, style=custom_style_3)
 
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-
-    database = config['DEFAULT']['database']
-
-    conn = sqlite3.connect(database)
+    conn = connect()
     c = conn.cursor()
 
     # Removes players who where not selected and are currently tracked
@@ -669,12 +622,7 @@ def update_tracked_players():
 
 
 def get_active_players():
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-
-    database = config['DEFAULT']['database']
-
-    conn = sqlite3.connect(database)
+    conn = connect()
     c = conn.cursor()
 
     c.execute('''SELECT * FROM players''')
@@ -698,12 +646,7 @@ def get_active_players():
 
 # Returns a list of players to be tracked
 def get_tracked_players():
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-
-    database = config['DEFAULT']['database']
-
-    conn = sqlite3.connect(database)
+    conn = connect()
     c = conn.cursor()
 
     c.execute('''SELECT player_tag, player_name FROM players WHERE track = "Y"''')
@@ -727,11 +670,7 @@ def get_tracked_players():
 
 
 def insert_league_war_data(league_war_obj, verbose=False):
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-
-    database = config['DEFAULT']['database']
-    conn = sqlite3.connect(database)
+    conn = connect()
     c = conn.cursor()
 
     for clan in league_war_obj.clans:
@@ -820,12 +759,7 @@ def insert_league_war_data(league_war_obj, verbose=False):
 
 
 def get_recorded_league_wars(league_war_id):
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-
-    database = Path(config['DEFAULT']['database'])
-
-    conn = sqlite3.connect(database)
+    conn = connect()
     c = conn.cursor()
 
     c.execute('''SELECT war_tag FROM league_war_battles WHERE league_war_id = ?''', (league_war_id,))
@@ -839,12 +773,7 @@ def get_recorded_league_wars(league_war_id):
 
 
 def get_league_war_rounds(season, clan_tag):
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-
-    database = Path(config['DEFAULT']['database'])
-
-    conn = sqlite3.connect(database)
+    conn = connect()
     c = conn.cursor()
 
     c.execute('''SELECT war_tag FROM league_war_battles WHERE league_war_id = ?''', (league_war_id,))
