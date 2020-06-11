@@ -1,7 +1,7 @@
 from prettytable import PrettyTable as pt
 import pyfiglet
 import configparser
-from database_managment import get_tracked_players, get_active_players, get_war_ids, get_clan_members_attacks, get_war_details, get_player_war_data, get_clan_wars
+from database_managment import get_tracked_players, get_active_players, get_war_ids, get_clan_members_attacks, get_war_details, get_player_war_data, get_clan_wars, get_league_war_rounds, get_league_war_battles
 from main_functions import *
 from parse_json_file import *
 
@@ -229,5 +229,59 @@ def view_league_war_round():
                 if clan['id'] == option[1]:
                     break
 
+    rounds = get_league_war_rounds(clan['league_season'], clan['clan_tag'])
+    round_list = list()
+
+    while True:
+        clear()
+        print(banner)
+        print('Select a Clan')
+        for enu, war_round in enumerate(rounds, 1):
+            print(f'{enu}) War Round: {war_round["war_round"]}\n'
+                  f'    Opponent: {war_round["opp_name"]}')
+            round_list.append((enu, war_round['war_id']))
+        try:
+            user_ans = int(input('--> '))
+            if user_ans in range(1, enu + 1):
+                break
+            else:
+                raise ValueError
+        except ValueError:
+            print('Not a Valid Answer')
+            _ = input('Press Enter to Try Again...')
+
+    for option in round_list:
+        if option[0] == user_ans:
+            for war_round in rounds:
+                if war_round['war_id'] == option[1]:
+                    break
+
+    members = get_league_war_battles(war_round['war_id'])
+
+    t = pt()
+    t.field_names = ['Player Name', 'Townhall Level', 'Map Position', 'Attacks', 'Stars', 'Destruction',
+                     'Attack Order', 'Opponent Map Position']
+    t.align['Player Name'] = 'l'
+    for member in members:
+        if member['clan_tag'] == clan['clan_tag']:
+            t.add_row([format_name(member['player_name']), member['townhall_level'], member['map_position'], member['attacks'],
+                       member['stars'], member['destruction'], member['attack_order'], member['opp_map_position']])
+
+    clear()
+    print(banner)
+    print(f'War Round: {war_round["war_round"]}')
+    print(f'Start Time: {war_round["start_time"]}')
+    print(f'End Time: {war_round["end_time"]}')
+    print(f'Clan Name: {war_round["clan_name"]}')
+    print(f'    Clan Attacks: {war_round["clan_attacks"]}')
+    print(f'    Clan Stars: {war_round["clan_stars"]}')
+    print(f'    Clan Destruction: {war_round["clan_destruction"]}')
+    print(f'Opponent: {war_round["opp_name"]}')
+    print(f'    Clan Attacks: {war_round["opp_attacks"]}')
+    print(f'    Clan Stars: {war_round["opp_stars"]}')
+    print(f'    Clan Destruction: {war_round["opp_destruction"]}')
+    print(t)
+
+    return 0
 
 

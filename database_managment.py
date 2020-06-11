@@ -772,16 +772,110 @@ def get_recorded_league_wars(league_war_id):
         return [war_tag for t in r for war_tag in t]
 
 
-def get_league_war_rounds(season, clan_tag):
+def get_league_war_rounds(league_season, clan_tag):
     conn = connect()
     c = conn.cursor()
 
-    c.execute('''SELECT war_tag FROM league_war_battles WHERE league_war_id = ?''', (league_war_id,))
+    c.execute('''SELECT lw.war_id, 
+                        lw.war_round, 
+                        lw.team_size, 
+                        lw.start_time, 
+                        lw.end_time, 
+                        lw.clan1_tag, 
+                        lca.clan_name,
+                        lw.clan1_attacks,
+                        lw.clan1_stars,
+                        lw.clan1_destruction,
+                        lw.clan2_tag, 
+                        lcb.clan_name,
+                        lw.clan2_attacks,
+                        lw.clan2_stars,
+                        lw.clan2_destruction
+                   FROM league_wars lw, 
+                        league_clans lca, 
+                        league_clans lcb
+                  WHERE lw.league_season = ?
+                    AND lca.league_season = ?
+                    AND lcb.league_season = ?
+                    AND lca.clan_tag = lw.clan1_tag
+                    AND lcb.clan_tag = lw.clan2_tag
+                    AND (clan1_tag = ? 
+                        OR clan2_tag = ?)''', (league_season, league_season, league_season, clan_tag, clan_tag))
     r = c.fetchall()
-    conn.close()
+
+    rounds = list()
+
+    for war_round in r:
+        round_data = {
+            'war_id': war_round[0],
+            'war_round': war_round[1],
+            'team_size': war_round[2],
+            'start_time': war_round[3],
+            'end_time': war_round[4],
+            'clan_tag': clan_tag
+
+        }
+        if war_round[5] == clan_tag:
+            round_data['clan_name'] = war_round[6]
+            round_data['clan_attacks'] = war_round[7]
+            round_data['clan_stars'] = war_round[8]
+            round_data['clan_destruction'] = war_round[9]
+            round_data['opp_tag'] = war_round[10]
+            round_data['opp_name'] = war_round[11]
+            round_data['opp_attacks'] = war_round[12]
+            round_data['opp_stars'] = war_round[13]
+            round_data['opp_destruction'] = war_round[14]
+        else:
+            round_data['clan_name'] = war_round[11]
+            round_data['clan_attacks'] = war_round[12]
+            round_data['clan_stars'] = war_round[13]
+            round_data['clan_destruction'] = war_round[14]
+            round_data['opp_tag'] = war_round[5]
+            round_data['opp_name'] = war_round[6]
+            round_data['opp_attacks'] = war_round[7]
+            round_data['opp_stars'] = war_round[8]
+            round_data['opp_destruction'] = war_round[9]
+
+        rounds.append(round_data)
+
+    return rounds
 
 
+def get_league_war_battles(war_id):
+    conn = connect()
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
 
+    c.execute('''SELECT player_tag, player_name, townhall_level, map_position, clan_tag, attacks
+                   FROM league_players
+                  WHERE war_id = ?''', (war_id,))
+
+    members = sorted([dict(row) for row in c.fetchall()], key=lambda i: (i['map_position']))
+
+    c.execute('''SELECT attacker_tag, defender_tag, stars, destruction, attack_order
+                   FROM league_battles
+                   WHERE war_id = ?''', (war_id,))
+
+    battles = [dict(row) for row in c.fetchall()]
+
+    for member in members:
+        found = False
+        for battle in battles:
+            if member['player_tag'] == battle['attacker_tag']:
+                found = True
+                member['stars'] = battle['stars']
+                member['destruction'] = battle['destruction']
+                member['attack_order'] = battle['attack_order']
+                for opponent in members:
+                    if opponent['player_tag'] == battle['defender_tag']:
+                        member['opp_map_position'] = opponent['map_position']
+        if not found:
+            member['stars'] = 'N/A'
+            member['destruction'] = 'N/A'
+            member['attack_order'] = 'N/A'
+            member['opp_map_position'] = 'N/A'
+
+    return members
 
 
 '''
