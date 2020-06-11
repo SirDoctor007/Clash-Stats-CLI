@@ -15,9 +15,10 @@ logger = logging.getLogger(__name__)
 
 
 def get_player_data(submit_to_database):
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-    headers = {'Accept': 'application/json', 'authorization': base64.b64decode(config['DEFAULT']['token']).decode()}
+    config = get_config('secrets.ini')
+    headers = {'Accept': 'application/json', 'authorization': base64.b64decode(config['INFO']['api_token']).decode()}
+
+    config = get_config('config.ini')
 
     player_tags = get_tracked_players()
 
@@ -25,7 +26,7 @@ def get_player_data(submit_to_database):
     date, time = str(timestamp).split(' ')
 
     for player in player_tags:
-        url = config['DEFAULT']['player_url'] + requests.utils.quote(player['player_tag'])
+        url = config['INFO']['player_url'] + requests.utils.quote(player['player_tag'])
 
         r = requests.get(url, headers=headers)
 
@@ -38,7 +39,7 @@ def get_player_data(submit_to_database):
             content['timestamp'] = str(timestamp)
 
             file = f'{date}_{time[:5].replace(":", "-")}_{format_name(content["name"])}.json'
-            file_path = Path(config['DEFAULT']['data_folder'], 'Player', file)
+            file_path = Path(config['INFO']['data_folder'], 'Player', file)
 
             with open(file_path, 'w') as f:
                 json.dump(content, f, indent=2)
@@ -50,12 +51,13 @@ def get_player_data(submit_to_database):
 
 
 def get_player_data_ftp(submit_to_database):
-    config = configparser.ConfigParser()
-    config.read('config.ini')
+    config = get_config('secrets.ini')
 
-    ftp = FTP(config['DEFAULT']['ftp_ip'])
-    ftp.login(config['DEFAULT']['ftp_user'], config['DEFAULT']['ftp_pass'])
+    ftp = FTP(config['INFO']['ftp_ip'])
+    ftp.login(config['INFO']['ftp_user'], config['INFO']['ftp_pass'])
     files = ftp.nlst('Player_Data')
+
+    config = get_config('config.ini')
 
     if len(files) == 0:
         print('There are no player records to pull')
@@ -63,7 +65,7 @@ def get_player_data_ftp(submit_to_database):
         print(f'\nRetrieving {len(files)} files...\n')
         for file in tqdm(files):
             split = file.split('/')
-            file_path = Path(config['DEFAULT']['data_folder'], 'Player', split[1])
+            file_path = Path(config['INFO']['data_folder'], 'Player', split[1])
             with open(file_path, 'wb') as f:
                 ftp.retrbinary(f'RETR {file}', f.write)
             ftp.delete(file)
@@ -77,11 +79,11 @@ def get_player_data_ftp(submit_to_database):
 
 
 def get_clan_members(submit_to_database):
-    config = configparser.ConfigParser()
-    config.read('config.ini')
+    config = get_config('secrets.ini')
+    headers = {'Accept': 'application/json', 'authorization': base64.b64decode(config['INFO']['api_token']).decode()}
 
-    url = config['DEFAULT']['clan_url'] + requests.utils.quote(config['DEFAULT']['clan_tag']) + '/members'
-    headers = {'Accept': 'application/json', 'authorization': base64.b64decode(config['DEFAULT']['token']).decode()}
+    config = get_config('config.ini')
+    url = config['INFO']['clan_url'] + requests.utils.quote(config['INFO']['clan_tag']) + '/members'
 
     r = requests.get(url, headers=headers)
 
@@ -94,8 +96,8 @@ def get_clan_members(submit_to_database):
         timestamp = get_timestamp()
         date, time = str(timestamp).split(' ')
 
-        file = f'{date}_{time[:5].replace(":", "-")}_{config["DEFAULT"]["clan_name"]}_Members.json'
-        file_path = Path(config['DEFAULT']['data_folder'], 'Clan Members', file)
+        file = f'{date}_{time[:5].replace(":", "-")}_{config["INFO"]["clan_name"]}_Members.json'
+        file_path = Path(config['INFO']['data_folder'], 'Clan Members', file)
         content = r.json()
         content['timestamp'] = str(timestamp)
         with open(file_path, 'w') as f:
@@ -108,11 +110,11 @@ def get_clan_members(submit_to_database):
 
 
 def get_clan_war_data(submit_to_database):
-    config = configparser.ConfigParser()
-    config.read('config.ini')
+    config = get_config('secrets.ini')
+    headers = {'Accept': 'application/json', 'authorization': base64.b64decode(config['INFO']['api_token']).decode()}
 
-    url = config['DEFAULT']['clan_url'] + requests.utils.quote(config['DEFAULT']['clan_tag']) + '/currentwar'
-    headers = {'Accept': 'application/json', 'authorization': base64.b64decode(config['DEFAULT']['token']).decode()}
+    config = get_config('config.ini')
+    url = config['INFO']['clan_url'] + requests.utils.quote(config['INFO']['clan_tag']) + '/currentwar'
 
     r = requests.get(url, headers=headers)
     logger.info(f'Get clan war data returned {r.status_code}')
@@ -134,7 +136,7 @@ def get_clan_war_data(submit_to_database):
                 content['timestamp'] = str(timestamp)
 
                 file = f'{date}_{time[:5].replace(":", "-")}_{format_name(content["clan"]["name"])}_War.json'
-                file_path = Path(config['DEFAULT']['data_folder'], 'Clan War', file)
+                file_path = Path(config['INFO']['data_folder'], 'Clan War', file)
 
                 with open(file_path, 'w') as f:
                     json.dump(content, f, indent=2)
@@ -146,8 +148,7 @@ def get_clan_war_data(submit_to_database):
 
 class ClanWar:
     def __init__(self, action, file_path=None):
-        self.config = configparser.ConfigParser()
-        self.config.read('config.ini')
+        self.config = get_config('config.ini')
         self.file_path = file_path
         self.details = dict()
         self.members = list()
@@ -162,8 +163,10 @@ class ClanWar:
             pass
 
     def get_data(self):
-        url = self.config['DEFAULT']['clan_url'] + requests.utils.quote(self.config['DEFAULT']['clan_tag']) + '/currentwar'
-        headers = {'Accept': 'application/json', 'authorization': base64.b64decode(self.config['DEFAULT']['token']).decode()}
+        config = get_config('secrets.ini')
+        headers = {'Accept': 'application/json', 'authorization': base64.b64decode(config['INFO']['api_token']).decode()}
+
+        url = self.config['INFO']['clan_url'] + requests.utils.quote(self.config['INFO']['clan_tag']) + '/currentwar'
 
         r = requests.get(url, headers=headers)
 
@@ -185,7 +188,7 @@ class ClanWar:
                     content['timestamp'] = str(timestamp)
 
                     file = f'{date}_{time[:5].replace(":", "-")}_{format_name(content["clan"]["name"])}_ClanWar.json'
-                    file_path = Path(self.config['DEFAULT']['data_folder'], 'Clan War', file)
+                    file_path = Path(self.config['INFO']['data_folder'], 'Clan War', file)
 
                     with open(file_path, 'w') as f:
                         json.dump(content, f, indent=2)
@@ -201,8 +204,7 @@ class ClanWar:
 
 class LeagueWar:
     def __init__(self, action):
-        self.config = configparser.ConfigParser()
-        self.config.read('config.ini')
+        self.config = get_config('config.ini')
         self.details = dict()
         self.clans = list()
         self.wars = list()
@@ -218,9 +220,11 @@ class LeagueWar:
             pass
 
     def get_data(self):
-        url = self.config['DEFAULT']['clan_url'] + requests.utils.quote(
-            self.config['DEFAULT']['clan_tag']) + '/currentwar/leaguegroup'
-        headers = {'Accept': 'application/json', 'authorization': base64.b64decode(self.config['DEFAULT']['token']).decode()}
+        config = get_config('secrets.ini')
+        headers = {'Accept': 'application/json', 'authorization': base64.b64decode(config['INFO']['api_token']).decode()}
+
+        url = self.config['INFO']['clan_url'] + requests.utils.quote(
+            self.config['INFO']['clan_tag']) + '/currentwar/leaguegroup'
 
         r = requests.get(url, headers=headers)
 
@@ -233,7 +237,7 @@ class LeagueWar:
 
             content['timestamp'] = str(get_timestamp())
 
-            folder = Path(self.config['DEFAULT']['data_folder'], 'League War', content['season'])
+            folder = Path(self.config['INFO']['data_folder'], 'League War', content['season'])
 
             if not Path.is_dir(folder):
                 Path.mkdir(folder)
@@ -246,7 +250,7 @@ class LeagueWar:
 
             self.clans, self.wars = parse_league_war_file(file_path)
 
-            season_war_files = Path(self.config['DEFAULT']['data_folder'], 'League War', content['season'], 'Wars')
+            season_war_files = Path(self.config['INFO']['data_folder'], 'League War', content['season'], 'Wars')
             processed_wars = []
             if Path.is_dir(season_war_files):
                 for root, dirs, files in os.walk(season_war_files):
@@ -271,9 +275,9 @@ class LeagueWar:
 
             for pos, war in enumerate(self.wars):
                 if war['war_tag'] not in processed_wars:
-                    url = self.config['DEFAULT']['clan_url'][:-6] + 'clanwarleagues/wars/' + requests.utils.quote(war['war_tag'])
+                    url = self.config['INFO']['clan_url'][:-6] + 'clanwarleagues/wars/' + requests.utils.quote(war['war_tag'])
                     headers = {'Accept': 'application/json',
-                               'authorization': base64.b64decode(self.config['DEFAULT']['token']).decode()}
+                               'authorization': base64.b64decode(self.config['INFO']['token']).decode()}
 
                     r = requests.get(url, headers=headers)
 
@@ -284,7 +288,7 @@ class LeagueWar:
                             content['war_tag'] = war['war_tag']
                             content['timestamp'] = str(get_timestamp())
 
-                            folder = Path(self.config['DEFAULT']['data_folder'], 'League War',
+                            folder = Path(self.config['INFO']['data_folder'], 'League War',
                                           self.details['league_season'], 'Wars')
 
                             if not Path.is_dir(folder):
@@ -312,11 +316,11 @@ class LeagueWar:
             self.flush_wars()
 
     def pull_data(self):
-        file_path = find_file_options(Path(self.config['DEFAULT']['data_folder'], 'League War'), False, 1)
+        file_path = find_file_options(Path(self.config['INFO']['data_folder'], 'League War'), False, 1)
         self.clans, self.wars = parse_league_war_file(file_path)
         self.details['league_season'] = self.clans[0]['league_season']
 
-        war_folder = Path(self.config['DEFAULT']['data_folder'], 'League War', self.details['league_season'], 'Wars')
+        war_folder = Path(self.config['INFO']['data_folder'], 'League War', self.details['league_season'], 'Wars')
 
         for root, dirs, files in os.walk(war_folder):
             for file in files:

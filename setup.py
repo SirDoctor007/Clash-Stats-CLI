@@ -1,11 +1,11 @@
 import configparser
 from pathlib import Path
 from database_managment import create_database
+from main_functions import get_config
 
 
 def setup():
-    config = configparser.ConfigParser()
-    config.read(Path('Config', 'config.ini'))
+    config = get_config('config.ini')
 
     data_path = Path(config['INFO']['data_folder'])
 

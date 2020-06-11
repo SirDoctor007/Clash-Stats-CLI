@@ -50,29 +50,10 @@ def find_file_options(folder, allow_multiple_options=True, recursive=10):
             print('Invalid number')
 
 
-class FindFiles:
-    def __init__(self):
-        self.allow_multiple_files = True
-        self.recursive = 100
-        self.file_options = dict()
-        self.file_count = 1
-        self.folder_depth = 0
-        self.message = ''
-
-    def get_files(self):
-        pass
-
-    def update_recursion(self, depth):
-        try:
-            depth = int(depth)
-        except ValueError:
-            pass
-        self.recursive = depth
-
-    def update_return(self, multi):
-        if type(multi) == bool:
-            self.allow_multiple_files = multi
-
+def get_config(config_file):
+    config = configparser.ConfigParser()
+    config.read(Path('Config', config_file))
+    return config
 
 
 def format_name(name):
@@ -168,3 +149,27 @@ def update_player_files(folder):
 
         with open(file, 'w') as f:
             json.dump(data, f, indent=2)
+
+
+# class FindFiles:
+#     def __init__(self):
+#         self.allow_multiple_files = True
+#         self.recursive = 100
+#         self.file_options = dict()
+#         self.file_count = 1
+#         self.folder_depth = 0
+#         self.message = ''
+#
+#     def get_files(self):
+#         pass
+#
+#     def update_recursion(self, depth):
+#         try:
+#             depth = int(depth)
+#         except ValueError:
+#             pass
+#         self.recursive = depth
+#
+#     def update_return(self, multi):
+#         if type(multi) == bool:
+#             self.allow_multiple_files = multi

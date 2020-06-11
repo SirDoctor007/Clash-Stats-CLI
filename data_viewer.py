@@ -22,10 +22,9 @@ def view_tracked_players():
 
 
 def view_clan_members():
-    config = configparser.ConfigParser()
-    config.read('config.ini')
+    config = get_config('config.ini')
 
-    clan_name = config['DEFAULT']['clan_name']
+    clan_name = config['INFO']['clan_name']
     players = get_active_players()
 
     clear()
@@ -62,9 +61,6 @@ def view_clan_members():
 
 
 def view_war_stats():
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-
     wars = get_war_ids()
 
     while True:
@@ -198,14 +194,13 @@ def view_recorded_clan_wars():
 
 
 def view_league_war_round():
-    config = configparser.ConfigParser()
-    config.read('config.ini')
+    config = get_config('config.ini')
 
     clear()
     banner = pyfiglet.figlet_format('League Round')
     print(banner)
     print('Select a Season\n')
-    file = find_file_options(Path(config['DEFAULT']['data_folder'], 'League War'), False, 1)
+    file = find_file_options(Path(config['INFO']['data_folder'], 'League War'), False, 1)
     clans, _ = parse_league_war_file(file)
     clan_list = list()
     # clans_list = [{'key': enu, 'clan_name': clan['clan_name'], 'clan_id': clan['id']} for enu, clan in enumerate(clans, 1)]
