@@ -9,6 +9,17 @@ def setup():
 
     data_path = Path(config['INFO']['data_folder'])
 
+    if Path.is_file(Path('Config', 'secrets.ini')):
+        print('Secrets all ready exists')
+    else:
+        secret_config = configparser.ConfigParser()
+        secret_config['INFO'] = {'api_token': ''}
+
+        with open(Path('Config', 'secrets.ini'), 'w') as f:
+            secret_config.write(f)
+
+        print('Created secrets file. Be sure to populate it with your api token.')
+
     if Path.is_dir(data_path):
         print('Data exists')
     else:

@@ -1,0 +1,4 @@
+/clash.db
+venv/
+Config/secrets.ini
+*.log
