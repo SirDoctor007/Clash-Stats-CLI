@@ -1,3 +1,4 @@
+import base64
 import configparser
 import hashlib
 import json
@@ -54,6 +55,14 @@ def get_config(config_file):
     config = configparser.ConfigParser()
     config.read(Path('Config', config_file))
     return config
+
+
+def get_headers():
+    config = get_config('secrets.ini')
+    headers = {'Accept': 'application/json',
+               'authorization': base64.b64decode(config['INFO']['api_token']).decode()}
+
+    return headers
 
 
 def get_answer(choices):

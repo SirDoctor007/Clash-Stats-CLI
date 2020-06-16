@@ -89,10 +89,14 @@ class Menu:
         ans = get_answer(choices)
 
         if ans == 'Update Player\'s Records':
-            get_player_data(submit_to_database())
+            pd = PlayerData('get')
+            if pd.status:
+                pd.submit_to_database()
         # TODO Remove the FTP option once I no longer need it. Not an intended function.
         elif ans == 'Get Player\'s Records via FTP':
-            get_player_data_ftp(submit_to_database())
+            pd = PlayerData('get_ftp')
+            if pd.status:
+                pd.submit_to_database()
         elif ans == 'Update Clan Members':
             cm = ClanMembers('get')
             if cm.status:
@@ -132,7 +136,9 @@ class Menu:
         if ans == 'Enter Player Record from json File':
             files = find_file_options(Path('Data', 'Player'))
             for file in files:
-                insert_player_record_data(parse_player_file(file), verbose=True)
+                pd = PlayerData('pull', file)
+                if pd.status:
+                    pd.submit_to_database()
         elif ans == 'Enter Clan War Data from json File':
             files = find_file_options(Path('Data', 'Clan War'))
             for file in files:

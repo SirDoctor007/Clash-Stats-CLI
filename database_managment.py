@@ -1,16 +1,14 @@
-import logging
 import logging.handlers
 import sqlite3
 
 from main_functions import *
 
-config = configparser.ConfigParser()
-config.read(Path('Config', 'database.ini'))
+config = get_config('config.ini')
 
-max_bytes = int(config['INFO']['max_bytes'])
-backup_count = int(config['INFO']['back_up_count'])
-file_logging_level = config['INFO']['file_logging_level']
-stream_logging_level = config['INFO']['stream_logging_level']
+max_bytes = int(config['LOGGING']['max_bytes'])
+backup_count = int(config['LOGGING']['back_up_count'])
+file_logging_level = config['LOGGING']['file_logging_level']
+stream_logging_level = config['LOGGING']['stream_logging_level']
 
 logger = logging.getLogger(__name__)
 
@@ -146,8 +144,8 @@ def insert_clan_war(clan_war_obj, verbose=False):
     attacks = clan_war_obj.attacks
 
     if get_recorded_status(str(details['start_time'])):
-        logger.info(f'{details["home_clan_name"]} vs {details["enemy_clan_name"]} has already been recorded. '
-                    f'Aborting')
+        logger.info(f'{format_name(details["home_clan_name"])} vs {format_name(details["enemy_clan_name"])} has '
+                    f'already been recorded. Aborting')
         return -1
 
     conn = connect()
@@ -173,8 +171,8 @@ def insert_clan_war(clan_war_obj, verbose=False):
                    details['enemy_clan_stars'],
                    details['enemy_clan_destruction'])
                   )
-        logger.info(f'{details["home_clan_name"]} vs {details["enemy_clan_name"]} details has been inserted into '
-                    f'clan_war')
+        logger.info(f'{format_name(details["home_clan_name"])} vs {format_name(details["enemy_clan_name"])} details '
+                    f'has been inserted into clan_war')
     except sqlite3.IntegrityError:
         logger.info(f'The "war_id" of {details["war_id"]} has already been used.')
         conn.close()
@@ -192,8 +190,8 @@ def insert_clan_war(clan_war_obj, verbose=False):
                    player['attacks'],
                    player['defends'], player['stars'],
                    player['destruction']))
-    logger.info(f'{details["home_clan_name"]} vs {details["enemy_clan_name"]} members have been inserted into '
-                f'clan_war_members')
+    logger.info(f'{format_name(details["home_clan_name"])} vs {format_name(details["enemy_clan_name"])} members have '
+                f'been inserted into clan_war_members')
 
     # Inserts the attack details for each member
     for attack in attacks:
@@ -205,8 +203,8 @@ def insert_clan_war(clan_war_obj, verbose=False):
                    attack['stars'],
                    attack['destructionPercentage'],
                    attack['order']))
-    logger.info(f'{details["home_clan_name"]} vs {details["enemy_clan_name"]} attacks have been inserted into '
-                f'clan_war_battles')
+    logger.info(f'{format_name(details["home_clan_name"])} vs {format_name(details["enemy_clan_name"])} attacks have '
+                f'been inserted into clan_war_battles')
 
     logger.info(f'Inserted {clan_war_obj.file_path}')
 
@@ -519,10 +517,10 @@ def insert_player_record_data(player_data, verbose=False):
                                   player_data['looted_gold'],
                                   player_data['looted_elixer'],
                                   player_data['looted_dark_elixer']))
-        logger.info(f'Inserted {player_data["player_name"]} {player_data["timestamp"]} to player_record')
+        logger.info(f'Inserted {format_name(player_data["player_name"])} {player_data["timestamp"]} to player_record')
     # Player record has already been recorded
     except sqlite3.IntegrityError:
-        logger.info(f'Skipping {player_data["player_name"]} {player_data["timestamp"]}')
+        logger.info(f'Skipping {format_name(player_data["player_name"])} {player_data["timestamp"]}')
     except sqlite3.OperationalError:
         logger.error(exc_info=True)
     finally:
