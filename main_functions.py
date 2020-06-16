@@ -56,6 +56,29 @@ def get_config(config_file):
     return config
 
 
+def get_answer(choices):
+    choices_tuples = list()
+    ans = None
+
+    while True:
+        for pos, choice in enumerate(choices, 1):
+            print(f'{pos}) {choice}')
+            choices_tuples.append((pos, choice))
+
+        try:
+            user_ans = int(input('--> '))
+            for t in choices_tuples:
+                if t[0] == user_ans:
+                    ans = t[1]
+            if ans is None:
+                raise ValueError
+            else:
+                break
+        except ValueError:
+            print('That is not a valid answer.\n')
+
+    return ans
+
 def format_name(name):
     fname = ''
     for char in name:
