@@ -37,7 +37,7 @@ def find_file_options(folder, allow_multiple_options=True, recursive=10):
 
             if user_ans in file_options.keys():
                 if file_options[user_ans] == 'All':
-                    del file_options[-1]
+                    del file_options[file_count]
                     for file in file_options.values():
                         files.append(file)
                     return files

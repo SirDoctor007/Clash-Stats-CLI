@@ -134,11 +134,9 @@ class Menu:
         elif ans == 'Enter Clan War Data from json File':
             files = find_file_options(Path('Data', 'Clan War'))
             for file in files:
-                print(f'Inserting {file}...')
                 cw = ClanWar('pull', file)
-                cw.submit_to_database()
-                details, members, attacks = parse_clan_war_file(file)
-                insert_clan_war(details, members, attacks)
+                if cw.status:
+                    cw.submit_to_database()
         elif ans == 'Enter League War Data from json File':
             lw = LeagueWar('pull')
             lw.submit_to_database()

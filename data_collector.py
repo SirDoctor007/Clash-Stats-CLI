@@ -195,7 +195,7 @@ class ClanWar:
         self.details, self.members, self.attacks = parse_clan_war_file(file_path)
 
     def submit_to_database(self):
-        insert_clan_war(self)
+        insert_clan_war(self, verbose=True)
 
 
 class LeagueWar:

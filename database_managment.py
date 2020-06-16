@@ -111,13 +111,14 @@ def create_database():
 
 
 # Returns 0 if successful
-def insert_clan_war(clan_war_obj):
+def insert_clan_war(clan_war_obj, verbose=False):
     details = clan_war_obj.details
     members = clan_war_obj.members
     attacks = clan_war_obj.attacks
 
     if get_recorded_status(str(details['start_time'])):
-        print('This war has already been recorded. Aborting')
+        if verbose:
+            print('This war has already been recorded. Aborting')
         return -1
 
     conn = connect()
@@ -144,7 +145,8 @@ def insert_clan_war(clan_war_obj):
                    details['enemy_clan_destruction'])
                   )
     except sqlite3.IntegrityError:
-        print(f'The "war_id" of {details["war_id"]} has already been used.')
+        if verbose:
+            print(f'The "war_id" of {details["war_id"]} has already been used.')
         conn.close()
         return -1
 
@@ -171,6 +173,9 @@ def insert_clan_war(clan_war_obj):
                    attack['stars'],
                    attack['destructionPercentage'],
                    attack['order']))
+
+    if verbose:
+        print(f'Inserted {clan_war_obj.file_path}')
 
     conn.commit()
     conn.close()
