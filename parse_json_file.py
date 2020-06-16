@@ -1,11 +1,7 @@
-# import pathlib
-# import string
-
 import logging
-import json
+
 from database_managment import get_next_war_id
 from main_functions import *
-
 
 logger = logging.getLogger(__name__)
 

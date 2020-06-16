@@ -1,10 +1,8 @@
-# from pathlib import Path
-# import os
-
-import sqlite3
 import logging
-import configparser
-from PyInquirer import prompt, style_from_dict, Token
+import sqlite3
+
+from PyInquirer import style_from_dict, Token
+
 from main_functions import *
 
 logger = logging.getLogger(__name__)

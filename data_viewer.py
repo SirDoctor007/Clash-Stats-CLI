@@ -1,8 +1,7 @@
-from prettytable import PrettyTable as pt
 import pyfiglet
-import configparser
-from database_managment import get_tracked_players, get_active_players, get_war_ids, get_clan_members_attacks, get_war_details, get_player_war_data, get_clan_wars, get_league_war_rounds, get_league_war_battles
-from main_functions import *
+from prettytable import PrettyTable as pt
+
+from database_managment import *
 from parse_json_file import *
 
 
@@ -15,6 +14,7 @@ def view_tracked_players():
     for player in players:
         t.add_row([format_name(player['player_name'])])
 
+    clear()
     print(t)
     print(f'Number of tracked players: {len(players)}')
 

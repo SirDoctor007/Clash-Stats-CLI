@@ -1,15 +1,6 @@
-# import logging
-# from data_collector import get_clan_war_data
-# import pathlib
-import pyfiglet
-from setup import setup
-# from PyInquirer import style_from_dict, Token, prompt, Separator
-# from main_functions import find_file_options
-# from database_managment import *
-# from parse_json_file import *
-from data_viewer import *
 from data_collector import *
-# import sqlite3
+from data_viewer import *
+from setup import setup
 
 
 class Menu:

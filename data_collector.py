@@ -1,15 +1,11 @@
-import configparser
-import requests
 import base64
-import logging
-import json
-import html
-from pathlib import Path
-from tqdm import tqdm
 from ftplib import FTP
+
+import requests
+from tqdm import tqdm
+
 from database_managment import *
 from parse_json_file import *
-
 
 logger = logging.getLogger(__name__)
 

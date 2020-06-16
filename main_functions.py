@@ -1,11 +1,11 @@
-import os
+import configparser
 import hashlib
 import json
-import configparser
-from string import printable
-# from pytz import timezone
+import os
 from datetime import datetime, timezone
 from pathlib import Path
+from string import printable
+
 from PyInquirer import prompt
 
 
@@ -37,7 +37,7 @@ def find_file_options(folder, allow_multiple_options=True, recursive=10):
 
             if user_ans in file_options.keys():
                 if file_options[user_ans] == 'All':
-                    del file_options[last]
+                    del file_options[-1]
                     for file in file_options.values():
                         files.append(file)
                     return files
