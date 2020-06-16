@@ -94,7 +94,9 @@ class Menu:
         elif ans == 'Get Player\'s Records via FTP':
             get_player_data_ftp(submit_to_database())
         elif ans == 'Update Clan Members':
-            get_clan_members(submit_to_database())
+            cm = ClanMembers('get')
+            if cm.status:
+                cm.submit_to_database()
         elif ans == 'Get Clan War Data':
             cw = ClanWar('get')
             if cw.status:
@@ -142,7 +144,9 @@ class Menu:
             lw.submit_to_database()
         elif ans == 'Enter Clan Member Data from json File':
             file = find_file_options(Path('Data', 'Clan Members'), allow_multiple_options=False)
-            insert_players_from_clan(parse_clan_members(file), verbose=True)
+            cm = ClanMembers('pull', file_path=file)
+            if cm.status:
+                cm.submit_to_database()
         elif ans == 'Go Back':
             self.main_menu()
         elif ans == 'Quit':

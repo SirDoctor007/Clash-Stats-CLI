@@ -10,6 +10,8 @@ from parse_json_file import *
 logger = logging.getLogger(__name__)
 
 
+# TODO Change the api token to be not base64 encoded
+# TODO Add a way to detect internet access
 def get_player_data(submit_to_database):
     config = get_config('secrets.ini')
     headers = {'Accept': 'application/json', 'authorization': base64.b64decode(config['INFO']['api_token']).decode()}
@@ -74,72 +76,52 @@ def get_player_data_ftp(submit_to_database):
     return 0
 
 
-def get_clan_members(submit_to_database):
-    config = get_config('secrets.ini')
-    headers = {'Accept': 'application/json', 'authorization': base64.b64decode(config['INFO']['api_token']).decode()}
+class ClanMembers:
+    def __init__(self, action, file_path=None):
+        self.config = get_config('config.ini')
+        self.file_path = file_path
+        self.members = list()
+        self.status = True
 
-    config = get_config('config.ini')
-    url = config['INFO']['clan_url'] + requests.utils.quote(config['INFO']['clan_tag']) + '/members'
-
-    r = requests.get(url, headers=headers)
-
-    if r.status_code != 200:
-        logger.warning(f'Get clan member data returned {r.status_code}')
-        return -1
-    else:
-        logger.info(f'Get clan member data returned {r.status_code}')
-
-        timestamp = get_timestamp()
-        date, time = str(timestamp).split(' ')
-
-        file = f'{date}_{time[:5].replace(":", "-")}_{config["INFO"]["clan_name"]}_Members.json'
-        file_path = Path(config['INFO']['data_folder'], 'Clan Members', file)
-        content = r.json()
-        content['timestamp'] = str(timestamp)
-        with open(file_path, 'w') as f:
-            json.dump(content, f, indent=2)
-
-        if submit_to_database:
-            insert_players_from_clan(parse_clan_members(file_path), verbose=True)
-
-    return 0
-
-
-def get_clan_war_data(submit_to_database):
-    config = get_config('secrets.ini')
-    headers = {'Accept': 'application/json', 'authorization': base64.b64decode(config['INFO']['api_token']).decode()}
-
-    config = get_config('config.ini')
-    url = config['INFO']['clan_url'] + requests.utils.quote(config['INFO']['clan_tag']) + '/currentwar'
-
-    r = requests.get(url, headers=headers)
-    logger.info(f'Get clan war data returned {r.status_code}')
-
-    if r.status_code != 200:
-        return -1
-    else:
-        content = r.json()
-        logger.info(f'Clan war data has status of: {content["state"]}')
-
-        if content['state'] != 'warEnded':
-            print('War data not available at this time.')
+        if action == 'get':
+            self.get_data()
+        elif action == 'pull':
+            self.pull_data(self.file_path)
         else:
-            if get_recorded_status(str(content['start_time'])):
-                print('This war has already been collected, aborting...')
-            else:
-                timestamp = get_timestamp()
-                date, time = str(timestamp).split(' ')
-                content['timestamp'] = str(timestamp)
+            pass
 
-                file = f'{date}_{time[:5].replace(":", "-")}_{format_name(content["clan"]["name"])}_War.json'
-                file_path = Path(config['INFO']['data_folder'], 'Clan War', file)
+    def get_data(self):
+        sec_config = get_config('secrets.ini')
+        headers = {'Accept': 'application/json',
+                   'authorization': base64.b64decode(sec_config['INFO']['api_token']).decode()}
 
-                with open(file_path, 'w') as f:
-                    json.dump(content, f, indent=2)
+        url = self.config['INFO']['clan_url'] + requests.utils.quote(self.config['INFO']['clan_tag']) + '/members'
 
-                if submit_to_database:
-                    details, members, attacks = parse_clan_war_file(file_path)
-                    insert_clan_war(details, members, attacks)
+        r = requests.get(url, headers=headers)
+
+        if r.status_code != 200:
+            logger.warning(f'Get clan member data returned {r.status_code}')
+            self.status = False
+        else:
+            logger.info(f'Get clan member data returned {r.status_code}')
+
+            timestamp = get_timestamp()
+            date, time = str(timestamp).split(' ')
+
+            file = f'{date}_{time[:5].replace(":", "-")}_{self.config["INFO"]["clan_name"]}_Members.json'
+            file_path = Path(self.config['INFO']['data_folder'], 'Clan Members', file)
+            content = r.json()
+            content['timestamp'] = str(timestamp)
+            with open(file_path, 'w') as f:
+                json.dump(content, f, indent=2)
+
+            self.members = parse_clan_members(file_path)
+
+    def pull_data(self, file_path):
+        self.members = parse_clan_members(file_path)
+
+    def submit_to_database(self):
+        insert_players_from_clan(self.members, verbose=True)
 
 
 class ClanWar:
