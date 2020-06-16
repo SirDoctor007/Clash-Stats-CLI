@@ -2,3 +2,4 @@
 venv/
 Config/secrets.ini
 *.log
+*.log.*

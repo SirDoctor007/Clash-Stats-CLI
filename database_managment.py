@@ -1,11 +1,33 @@
 import logging
+import logging.handlers
 import sqlite3
-
-from PyInquirer import style_from_dict, Token
 
 from main_functions import *
 
+config = configparser.ConfigParser()
+config.read(Path('Config', 'database.ini'))
+
+max_bytes = int(config['INFO']['max_bytes'])
+backup_count = int(config['INFO']['back_up_count'])
+file_logging_level = config['INFO']['file_logging_level']
+stream_logging_level = config['INFO']['stream_logging_level']
+
 logger = logging.getLogger(__name__)
+
+f_handler = logging.handlers.RotatingFileHandler(Path('Logs', 'database.log'), maxBytes=max_bytes, backupCount=backup_count)
+s_handler = logging.StreamHandler()
+
+f_handler.setLevel(file_logging_level)
+s_handler.setLevel(stream_logging_level)
+
+f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+s_format = logging.Formatter('%(message)s')
+
+f_handler.setFormatter(f_format)
+s_handler.setFormatter(s_format)
+
+logger.addHandler(f_handler)
+logger.addHandler(s_handler)
 
 '''
 PRIMARY FUNCTIONS
@@ -19,6 +41,7 @@ def connect():
     database = Path(config['INFO']['database_name'])
 
     conn = sqlite3.connect(database)
+    logger.debug(f'Connected to {database}')
     return conn
 
 
@@ -44,9 +67,10 @@ def create_database():
         else:
             try:
                 Path.unlink(database)
-            except PermissionError as e:
-                print(f'Unable to recreate the database as it is open in another process\n{e}')
-                print('\nAborting database creation...')
+            except PermissionError:
+                print('')
+                logger.error('Unable to recreate the database as it is open in another process')
+                print('Aborting database creation...')
                 return -1
     print('Creating Database...')
     conn = sqlite3.connect(database)
@@ -112,13 +136,18 @@ def create_database():
 
 # Returns 0 if successful
 def insert_clan_war(clan_war_obj, verbose=False):
+    if verbose:
+        s_handler.setLevel(logging.INFO)
+    else:
+        s_handler.setLevel(logging.CRITICAL)
+
     details = clan_war_obj.details
     members = clan_war_obj.members
     attacks = clan_war_obj.attacks
 
     if get_recorded_status(str(details['start_time'])):
-        if verbose:
-            print('This war has already been recorded. Aborting')
+        logger.info(f'{details["home_clan_name"]} vs {details["enemy_clan_name"]} has already been recorded. '
+                    f'Aborting')
         return -1
 
     conn = connect()
@@ -144,9 +173,10 @@ def insert_clan_war(clan_war_obj, verbose=False):
                    details['enemy_clan_stars'],
                    details['enemy_clan_destruction'])
                   )
+        logger.info(f'{details["home_clan_name"]} vs {details["enemy_clan_name"]} details has been inserted into '
+                    f'clan_war')
     except sqlite3.IntegrityError:
-        if verbose:
-            print(f'The "war_id" of {details["war_id"]} has already been used.')
+        logger.info(f'The "war_id" of {details["war_id"]} has already been used.')
         conn.close()
         return -1
 
@@ -162,6 +192,8 @@ def insert_clan_war(clan_war_obj, verbose=False):
                    player['attacks'],
                    player['defends'], player['stars'],
                    player['destruction']))
+    logger.info(f'{details["home_clan_name"]} vs {details["enemy_clan_name"]} members have been inserted into '
+                f'clan_war_members')
 
     # Inserts the attack details for each member
     for attack in attacks:
@@ -173,14 +205,16 @@ def insert_clan_war(clan_war_obj, verbose=False):
                    attack['stars'],
                    attack['destructionPercentage'],
                    attack['order']))
+    logger.info(f'{details["home_clan_name"]} vs {details["enemy_clan_name"]} attacks have been inserted into '
+                f'clan_war_battles')
 
-    if verbose:
-        print(f'Inserted {clan_war_obj.file_path}')
+    logger.info(f'Inserted {clan_war_obj.file_path}')
 
     conn.commit()
     conn.close()
 
     return 0
+
 
 def get_war_details(war_id):
     conn = connect()
@@ -265,7 +299,7 @@ def get_player_war_data(player_tag):
             'attacks': f'{attacks}/{count * 2}',
             'stars': f'{stars}/{count * 6}',
             'destruction': f'{destruction}/{count * 200}',
-            'avg_destruction': f'{format(destruction/attacks, ".1f")}%',
+            'avg_destruction': f'{format(destruction / attacks, ".1f")}%',
             'missed_attacks': count * 2 - attacks,
             'missed_stars': count * 6 - stars
         }
@@ -339,7 +373,6 @@ def get_war_ids():
 
 
 def remove_clan_war():
-
     wars = get_clan_wars()
 
     while True:
@@ -387,71 +420,6 @@ def get_clan_wars():
 
     return wars
 
-# # Returns 0 if sucessful
-# def insert_clan_war(details, members, attacks):
-#     if get_recorded_status(str(details['start_time'])):
-#         print('This war has already been recorded. Aborting')
-#         return 0
-#
-#     config = configparser.ConfigParser()
-#     config.read('config.ini')
-#
-#     database = Path(config['DEFAULT']['database'])
-#     conn = sqlite3.connect(database)
-#     c = conn.cursor()
-#
-#     # Inserts the details of the clan war
-#     try:
-#         c.execute('''INSERT INTO clan_war VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
-#                   (details['war_id'],
-#                    details['team_size'],
-#                    details['start_time'],
-#                    details['end_time'],
-#                    details['home_clan_tag'],
-#                    details['home_clan_name'],
-#                    details['home_clan_level'],
-#                    details['home_clan_attacks'],
-#                    details['home_clan_stars'],
-#                    details['home_clan_destruction'],
-#                    details['enemy_clan_tag'],
-#                    details['enemy_clan_name'],
-#                    details['enemy_clan_level'],
-#                    details['enemy_clan_attacks'],
-#                    details['enemy_clan_stars'],
-#                    details['enemy_clan_destruction'])
-#                   )
-#     except sqlite3.IntegrityError:
-#         print(f'The "war_id" of {details["war_id"]} has already been used.')
-#
-#     # Inserts the members of the clan war to the database
-#     for player in members:
-#         c.execute('''INSERT INTO clan_war_members VALUES (?,?,?,?,?,?,?,?,?,?)''',
-#                   (player['war_id'],
-#                    player['clan_tag'],
-#                    player['player_tag'],
-#                    player['player_name'],
-#                    player['townhall_level'],
-#                    player['map_position'],
-#                    player['attacks'],
-#                    player['defends'], player['stars'],
-#                    player['destruction']))
-#
-#     # Inserts the attack details for each member
-#     for attack in attacks:
-#         c.execute('''INSERT INTO clan_war_battles VALUES (?,?,?,?,?,?,?)''',
-#                   (attack['war_id'],
-#                    attack['type'],
-#                    attack['attackerTag'],
-#                    attack['defenderTag'],
-#                    attack['stars'],
-#                    attack['destructionPercentage'],
-#                    attack['order']))
-#
-#     conn.commit()
-#     conn.close()
-#
-#     return 0, (details['war_id'], details['start_time'], details['home_clan_name'], details['enemy_clan_name'])
-
 
 '''
 ####################################################################
@@ -461,6 +429,11 @@ def get_clan_wars():
 
 
 def insert_players_from_clan(members, verbose=False):
+    if verbose:
+        s_handler.setLevel(logging.INFO)
+    else:
+        s_handler.setLevel(logging.CRITICAL)
+
     conn = connect()
     c = conn.cursor()
 
@@ -468,6 +441,7 @@ def insert_players_from_clan(members, verbose=False):
     r = c.fetchall()
     old_members = [{'player_tag': t[0], 'player_name': t[1]} for t in r]
     active_members = [player['player_tag'] for player in members]
+    updated_players = list()
 
     if verbose:
         print('\n----Removed Players----')
@@ -476,8 +450,6 @@ def insert_players_from_clan(members, verbose=False):
             c.execute(f'''DELETE FROM players
                            WHERE player_tag = "{player['player_tag']}"''')
             logger.info(f'Removed {format_name(player["player_name"])} from table "players"')
-            if verbose:
-                print(player["player_name"])
 
     if verbose:
         print('\n----Added Players----')
@@ -491,24 +463,33 @@ def insert_players_from_clan(members, verbose=False):
                                                                            player['track'],
                                                                            player['last_updated']))
             logger.info(f'Inserted {format_name(player["player_name"])} to table "players"')
-            if verbose:
-                print(player["player_name"])
-        except sqlite3.OperationalError as error:
-            logger.error(error)
-        except sqlite3.IntegrityError as error:
+        except sqlite3.OperationalError:
+            logger.error(exc_info=True)
+        except sqlite3.IntegrityError:
             c.execute(f'''UPDATE players 
                              SET role = "{player['role']}",
                                  donations = "{player['donations']}",
                                  donations_received = "{player['donations_received']}",
                                  last_updated = "{player['last_updated']}"
                            WHERE player_tag = "{player['player_tag']}"''')
-            logger.info(f'Updated {format_name(player["player_name"])} in table "players"')
+            updated_players.append(format_name(player["player_name"]))
+
+    if verbose:
+        print('\n----Updated Players----')
+    for updated_player in updated_players:
+        logger.info(f'Updated {updated_player} in table "players"')
 
     conn.commit()
     conn.close()
 
 
+# TODO Change this function to allow inserting multiple players at a time
 def insert_player_record_data(player_data, verbose=False):
+    if verbose:
+        s_handler.setLevel(logging.INFO)
+    else:
+        s_handler.setLevel(logging.CRITICAL)
+
     conn = connect()
     c = conn.cursor()
     insert_string = 'INSERT INTO player_record VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
@@ -538,15 +519,12 @@ def insert_player_record_data(player_data, verbose=False):
                                   player_data['looted_gold'],
                                   player_data['looted_elixer'],
                                   player_data['looted_dark_elixer']))
-        if verbose:
-            print(f'Inserted {player_data["player_name"]} {player_data["timestamp"]} ...')
-        logger.info('Inserted row to table "player_record"')
+        logger.info(f'Inserted {player_data["player_name"]} {player_data["timestamp"]} to player_record')
     # Player record has already been recorded
     except sqlite3.IntegrityError:
-        if verbose:
-            print(f'Skipping {player_data["player_name"]} {player_data["timestamp"]} ...')
-    except sqlite3.OperationalError as error:
-        logger.error(error)
+        logger.info(f'Skipping {player_data["player_name"]} {player_data["timestamp"]}')
+    except sqlite3.OperationalError:
+        logger.error(exc_info=True)
     finally:
         conn.commit()
         conn.close()
@@ -556,14 +534,6 @@ def insert_player_record_data(player_data, verbose=False):
 
 # Updates members to track
 def update_tracked_players():
-    custom_style_3 = style_from_dict({
-        Token.QuestionMark: '#E91E63 bold',
-        Token.Selected: '#673AB7 bold',
-        Token.Instruction: '',  # default
-        Token.Answer: '#2196f3 bold',
-        Token.Question: '',
-    })
-
     players = get_active_players()
     tracked_players = []
     choices = []
@@ -586,7 +556,7 @@ def update_tracked_players():
         }
     ]
 
-    answers = prompt(questions, style=custom_style_3)
+    answers = prompt(questions)
 
     conn = connect()
     c = conn.cursor()
@@ -625,10 +595,13 @@ def update_tracked_players():
 
 
 def get_active_players():
+    s_handler.setLevel(logging.CRITICAL)
+
     conn = connect()
     c = conn.cursor()
 
     c.execute('''SELECT * FROM players''')
+    logger.info('Retrieved all records from players')
     r = c.fetchall()
 
     conn.close()
@@ -649,10 +622,13 @@ def get_active_players():
 
 # Returns a list of players to be tracked
 def get_tracked_players():
+    s_handler.setLevel(logging.CRITICAL)
+
     conn = connect()
     c = conn.cursor()
 
     c.execute('''SELECT player_tag, player_name FROM players WHERE track = "Y"''')
+    logger.info('Retrieved all tracked players from players')
     r = c.fetchall()
 
     conn.close()
@@ -673,6 +649,11 @@ def get_tracked_players():
 
 
 def insert_league_war_data(league_war_obj, verbose=False):
+    if verbose:
+        s_handler.setLevel(logging.INFO)
+    else:
+        s_handler.setLevel(logging.CRITICAL)
+
     conn = connect()
     c = conn.cursor()
 
@@ -686,32 +667,28 @@ def insert_league_war_data(league_war_obj, verbose=False):
                 clan['clan_level'],
                 clan['num_members']
             ))
-            if verbose:
-                print(f'Inserted {clan["clan_name"]} into league_clans ...')
+            logger.info(f'Inserted {format_name(clan["clan_name"])} into league_clans')
         # Clan has already been placed in the database
         except sqlite3.IntegrityError:
-            if verbose:
-                print(f'Skipped inserting {clan["clan_name"]} into league_clans ...')
+            logger.info(f'Skipped inserting {format_name(clan["clan_name"])} into league_clans')
 
     for player in league_war_obj.players:
         try:
             c.execute('''INSERT INTO league_players VALUES (?,?,?,?,?,?,?,?,?)''', (
-                    player['id'],
-                    player['war_id'],
-                    player['player_tag'],
-                    player['player_name'],
-                    player['townhall_level'],
-                    player['map_position'],
-                    player['clan_tag'],
-                    player['attacks'],
-                    player['defends']
-                ))
-            if verbose:
-                print(f'Inserted {player["player_name"]} into league_players ...')
+                player['id'],
+                player['war_id'],
+                player['player_tag'],
+                player['player_name'],
+                player['townhall_level'],
+                player['map_position'],
+                player['clan_tag'],
+                player['attacks'],
+                player['defends']
+            ))
+            logger.info(f'Inserted {format_name(player["player_name"])} into league_players')
         # Player has already been placed in the database
         except sqlite3.IntegrityError:
-            if verbose:
-                print(f'Skipped inserting {player["player_name"]} into league_players ...')
+            logger.info(f'Skipped inserting {format_name(player["player_name"])} into league_players')
 
     for war in league_war_obj.wars:
         try:
@@ -732,40 +709,39 @@ def insert_league_war_data(league_war_obj, verbose=False):
                 war['clan2_stars'],
                 war['clan2_destruction']
             ))
-            if verbose:
-                print(f'Inserted {war["war_tag"]} into league_wars ...')
+            logger.info(f'Inserted {war["war_tag"]} into league_wars')
         # War has already been placed in the database
         except sqlite3.IntegrityError:
-            if verbose:
-                print(f'Skipped inserting {war["war_tag"]} into league_wars ...')
+            logger.info(f'Skipped inserting {war["war_tag"]} into league_wars')
 
     for battle in league_war_obj.battles:
         try:
             c.execute('''INSERT INTO league_battles VALUES (?,?,?,?,?,?,?)''', (
-                    battle['id'],
-                    battle['war_id'],
-                    battle['attacker_tag'],
-                    battle['defender_tag'],
-                    battle['stars'],
-                    battle['destruction'],
-                    battle['attack_order']
-                ))
-            if verbose:
-                print(f'Inserted {battle["id"]} into league_battles ...')
+                battle['id'],
+                battle['war_id'],
+                battle['attacker_tag'],
+                battle['defender_tag'],
+                battle['stars'],
+                battle['destruction'],
+                battle['attack_order']
+            ))
+            logger.info(f'Inserted {battle["id"]} into league_battles')
         # Battle has already been placed in the database
         except sqlite3.IntegrityError:
-            if verbose:
-                print(f'Skipped inserting {battle["id"]} into league_battles ...')
+            logger.info(f'Skipped inserting {battle["id"]} into league_battles')
 
     conn.commit()
     conn.close()
 
 
 def get_recorded_league_wars(league_war_id):
+    s_handler.setLevel(logging.CRITICAL)
+
     conn = connect()
     c = conn.cursor()
 
     c.execute('''SELECT war_tag FROM league_war_battles WHERE league_war_id = ?''', (league_war_id,))
+    logger.info('Retrieved recorded league wars from league_war_battles')
     r = c.fetchall()
     conn.close()
 
@@ -776,6 +752,8 @@ def get_recorded_league_wars(league_war_id):
 
 
 def get_league_war_rounds(league_season, clan_tag):
+    s_handler.setLevel(logging.CRITICAL)
+
     conn = connect()
     c = conn.cursor()
 
@@ -804,6 +782,8 @@ def get_league_war_rounds(league_season, clan_tag):
                     AND lcb.clan_tag = lw.clan2_tag
                     AND (clan1_tag = ? 
                         OR clan2_tag = ?)''', (league_season, league_season, league_season, clan_tag, clan_tag))
+    logger.info(f'Retrieved league war rounds from league_war_battles where league_war_season = {league_season} and '
+                f'clan_tag = {clan_tag}')
     r = c.fetchall()
 
     rounds = list()
@@ -845,6 +825,8 @@ def get_league_war_rounds(league_season, clan_tag):
 
 
 def get_league_war_battles(war_id):
+    s_handler.setLevel(logging.CRITICAL)
+
     conn = connect()
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
@@ -852,12 +834,14 @@ def get_league_war_battles(war_id):
     c.execute('''SELECT player_tag, player_name, townhall_level, map_position, clan_tag, attacks
                    FROM league_players
                   WHERE war_id = ?''', (war_id,))
+    logger.info(f'Retrieved league war players from league_players where war_id = {war_id}')
 
     members = sorted([dict(row) for row in c.fetchall()], key=lambda i: (i['map_position']))
 
     c.execute('''SELECT attacker_tag, defender_tag, stars, destruction, attack_order
                    FROM league_battles
                    WHERE war_id = ?''', (war_id,))
+    logger.info(f'Retrieved league war attacks from league_battles where war_id = {war_id}')
 
     battles = [dict(row) for row in c.fetchall()]
 
