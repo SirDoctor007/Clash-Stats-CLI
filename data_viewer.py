@@ -193,6 +193,79 @@ def view_recorded_clan_wars():
     print(get_clan_wars())
 
 
+def view_league_war():
+    config = get_config('config.ini')
+
+    clan_tag = config['INFO']['clan_tag']
+    seasons = get_league_seasons()
+
+    clear()
+    print('Select a season.')
+    season = get_answer(seasons)
+
+    rounds = get_league_war_rounds(season, clan_tag)
+
+    t = pt()
+    t.field_names = ['War Round', 'Start Time', 'End Time', 'Clan', 'Stars', 'Attacks', 'Destruction',
+                     'Enemy Clan', 'Enemy Stars', 'Enemy Attacks', 'Enemy Destruction', 'Result']
+
+    stats = {
+        'wins': 0,
+        'losses': 0,
+        'draws': 0,
+        'total_stars': 0,
+        'total_attacks': 0,
+        'total_destruction': 0.0,
+        'team_size': int(rounds[0]['team_size'])
+    }
+
+    for war_round in rounds:
+        if war_round['clan_stars'] > war_round['opp_stars']:
+            result = 'Win'
+            stats['wins'] += 1
+        elif war_round['clan_stars'] < war_round['opp_stars']:
+            result = 'Lost'
+            stats['losses'] += 1
+        elif war_round['clan_stars'] == war_round['opp_stars']:
+            if war_round['clan_destruction'] > war_round['opp_destruction']:
+                result = 'Win'
+                stats['wins'] += 1
+            elif war_round['clan_destruction'] < war_round['opp_destruction']:
+                result = 'Lost'
+                stats['losses'] += 1
+            else:
+                result = 'Draw'
+                stats['draws'] += 1
+
+        stats['total_stars'] += war_round['clan_stars']
+        stats['total_attacks'] += war_round['clan_attacks']
+        stats['total_destruction'] += war_round['clan_destruction']
+
+        t.add_row([war_round['war_round'], format_timestamp(war_round['start_time']),
+                   format_timestamp(war_round['end_time']), war_round['clan_name'], war_round['clan_stars'],
+                   war_round['clan_attacks'], war_round['clan_destruction'], war_round['opp_name'],
+                   war_round['opp_stars'], war_round['opp_attacks'], war_round['opp_destruction'], result])
+
+    clear()
+    banner = pyfiglet.figlet_format('League War')
+    print(banner)
+    print(f'League Season: {season}')
+    print(f'Start Time: {format_timestamp(rounds[0]["start_time"])}')
+    print(f'End Time: {format_timestamp(rounds[-1]["end_time"])}')
+    print(f'Clan Name: {war_round["clan_name"]}')
+    print(f'    Wins: {stats["wins"]}')
+    print(f'    Losses: {stats["losses"]}')
+    print(f'    Draws: {stats["draws"]}')
+    print(f'    Clan Stars: {stats["total_stars"]}/{stats["team_size"] * 21}')
+    print(f'    Clan Attacks: {stats["total_attacks"]}/{stats["team_size"] * 7}')
+    print(f'    Clan Destruction: {format(stats["total_destruction"] / 700 * 100, ".2f")}%')
+    print(t)
+
+    # TODO Add continuation of individual rounds and overall
+    # print('\nEnter a round number to view more details, 8 to view overall and 9 to go back.')
+    # user_ans = int(input('--> '))
+
+
 def view_league_war_round():
     config = get_config('config.ini')
 

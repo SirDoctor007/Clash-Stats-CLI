@@ -749,6 +749,7 @@ def get_recorded_league_wars(league_war_id):
         return [war_tag for t in r for war_tag in t]
 
 
+# Returns a list of league war rounds for a specified season and clan.
 def get_league_war_rounds(league_season, clan_tag):
     s_handler.setLevel(logging.CRITICAL)
 
@@ -862,6 +863,22 @@ def get_league_war_battles(war_id):
 
     return members
 
+
+# Returns a list of recorded league war seasons
+def get_league_seasons():
+    conn = connect()
+    c = conn.cursor()
+
+    c.execute('''SELECT DISTINCT league_season FROM league_wars''')
+    r = c.fetchall()
+
+    conn.close()
+
+    seasons = list()
+    for t in r:
+        seasons.append(t[0])
+
+    return seasons
 
 '''
 Un-used Functions

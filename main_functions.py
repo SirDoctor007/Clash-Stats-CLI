@@ -116,9 +116,10 @@ def convert_timestamp(timestamp):
     return datetime.strptime(timestamp, datetime_format).replace(tzinfo=timezone.utc).astimezone(tz=None)
 
 
+# Returns M-D-Y H:M from Y-M-D H:M:Sz
 def format_timestamp(timestamp):
-    converted_format = '%m-%d-%Y %H:%M'
-    return datetime.strftime(timestamp, converted_format)
+    datetime_obj = datetime.strptime(str(timestamp), '%Y-%m-%d %H:%M:%S%z')
+    return datetime.strftime(datetime_obj, '%m-%d-%Y %H:%M')
 
 
 def get_timestamp():
