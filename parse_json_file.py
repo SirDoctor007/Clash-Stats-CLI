@@ -50,8 +50,8 @@ def parse_clan_members(file_path):
     try:
         with open(file_path, 'r') as file_data:
             data = json.load(file_data)
-    except FileNotFoundError as error:
-        logger.error(error)
+    except FileNotFoundError:
+        logger.error(exc_info=True)
         return -1
 
     members = []
@@ -75,8 +75,8 @@ def parse_clan_war_file(file_path):
     try:
         with open(file_path, 'r') as file_data:
             data = json.load(file_data)
-    except FileNotFoundError as error:
-        logger.error(error)
+    except FileNotFoundError:
+        logger.error(exc_info=True)
         return -1
 
     try:
@@ -187,8 +187,8 @@ def parse_league_war_file(file_path):
     try:
         with open(file_path, 'r') as file_data:
             data = json.load(file_data)
-    except FileNotFoundError as error:
-        logger.error(error)
+    except FileNotFoundError:
+        logger.error(exc_info=True)
         return -1
 
     league_clans = []
@@ -222,8 +222,8 @@ def parse_war_file(file_path, war_data):
     try:
         with open(file_path, 'r') as file_data:
             data = json.load(file_data)
-    except FileNotFoundError as error:
-        logger.error(error)
+    except FileNotFoundError:
+        logger.error(exc_info=True)
         return -1
 
     war_data2 = {
@@ -279,4 +279,3 @@ def parse_war_file(file_path, war_data):
                 pass
 
     return war_data, league_players, league_battles
-

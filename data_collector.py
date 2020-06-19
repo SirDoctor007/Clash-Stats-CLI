@@ -27,8 +27,6 @@ def get_player_data(submit_to_database):
         if r.status_code != 200:
             logger.warning(f'Get player data returned {r.status_code}')
         else:
-            logger.info(f'Get player data returned {r.status_code}')
-
             content = r.json()
             content['timestamp'] = str(timestamp)
 

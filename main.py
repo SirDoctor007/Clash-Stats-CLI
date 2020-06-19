@@ -1,3 +1,22 @@
+import configparser
+import logging.handlers
+from pathlib import Path
+
+# Sets up logging information
+config = configparser.ConfigParser()
+config.read(Path('Config', 'config.ini'))
+max_bytes = int(config['LOGGING']['max_bytes'])
+backup_count = int(config['LOGGING']['backup_count'])
+logging_level = config['LOGGING']['file_logging_level']
+
+handler = [logging.handlers.RotatingFileHandler(Path('Logs', 'error.log'), maxBytes=max_bytes, backupCount=backup_count)]
+log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+log_datefmt = '%Y-%m-%d %H:%M:%S'
+
+logging.basicConfig(level=logging_level, format=log_format, datefmt=log_datefmt, handlers=handler)
+logger = logging.getLogger(__name__)
+
+
 from data_collector import *
 from data_viewer import *
 from setup import setup
