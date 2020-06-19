@@ -103,7 +103,6 @@ class ClanMembers:
 
     def get_data(self):
         headers = get_headers()
-
         url = self.config_data['INFO']['clan_url'] + requests.utils.quote(self.config_data['INFO']['clan_tag']) + '/members'
 
         r = requests.get(url, headers=headers)
@@ -151,9 +150,7 @@ class ClanWar:
             pass
 
     def get_data(self):
-        config = get_config('secrets.ini')
-        headers = {'Accept': 'application/json', 'authorization': base64.b64decode(config['INFO']['api_token']).decode()}
-
+        headers = get_headers()
         url = self.config['INFO']['clan_url'] + requests.utils.quote(self.config['INFO']['clan_tag']) + '/currentwar'
 
         r = requests.get(url, headers=headers)
@@ -208,9 +205,7 @@ class LeagueWar:
             pass
 
     def get_data(self):
-        config = get_config('secrets.ini')
-        headers = {'Accept': 'application/json', 'authorization': base64.b64decode(config['INFO']['api_token']).decode()}
-
+        headers = get_headers()
         url = self.config['INFO']['clan_url'] + requests.utils.quote(
             self.config['INFO']['clan_tag']) + '/currentwar/leaguegroup'
 
