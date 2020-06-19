@@ -9,67 +9,6 @@ from parse_json_file import *
 
 # TODO Change the api token to be not base64 encoded
 # TODO Add a way to detect internet access
-def get_player_data(submit_to_database):
-    headers = get_headers()
-
-    config_data = get_config('config.ini')
-
-    player_tags = get_tracked_players()
-
-    timestamp = get_timestamp()
-    date, time = str(timestamp).split(' ')
-
-    for player in player_tags:
-        url = config_data['INFO']['player_url'] + requests.utils.quote(player['player_tag'])
-
-        r = requests.get(url, headers=headers)
-
-        if r.status_code != 200:
-            logger.warning(f'Get player data returned {r.status_code}')
-        else:
-            content = r.json()
-            content['timestamp'] = str(timestamp)
-
-            file = f'{date}_{time[:5].replace(":", "-")}_{format_name(content["name"])}.json'
-            file_path = Path(config_data['INFO']['data_folder'], 'Player', file)
-
-            with open(file_path, 'w') as f:
-                json.dump(content, f, indent=2)
-
-            if submit_to_database:
-                insert_player_record_data(parse_player_file(file_path))
-
-    return 0
-
-
-def get_player_data_ftp(submit_to_database):
-    config = get_config('secrets.ini')
-
-    ftp = FTP(config['INFO']['ftp_ip'])
-    ftp.login(config['INFO']['ftp_user'], config['INFO']['ftp_pass'])
-    files = ftp.nlst('Player_Data')
-
-    config = get_config('config.ini')
-
-    if len(files) == 0:
-        print('There are no player records to pull')
-    else:
-        print(f'\nRetrieving {len(files)} files...\n')
-        for file in tqdm(files):
-            split = file.split('/')
-            file_path = Path(config['INFO']['data_folder'], 'Player', split[1])
-            with open(file_path, 'wb') as f:
-                ftp.retrbinary(f'RETR {file}', f.write)
-            ftp.delete(file)
-
-            if submit_to_database:
-                insert_player_record_data(parse_player_file(file_path))
-        print('\nCompleted!')
-    ftp.quit()
-
-    return 0
-
-
 class PlayerData:
     def __init__(self, action, file_path=None):
         self.config_data = get_config('config.ini')
