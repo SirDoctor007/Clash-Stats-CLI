@@ -355,24 +355,17 @@ def get_war_ids():
 def remove_clan_war():
     wars = get_clan_wars()
 
-    while True:
-        try:
-            print('\nSelect a war to remove.')
-            for war in wars:
-                print(f'{war}) {wars[war]["enemy_clan_name"]}')
-            user_ans = int(input('--> '))
-            if user_ans in wars.keys():
-                print(user_ans)
-                break
-        except ValueError:
-            print('Not a valid answer.')
+    clan_name = get_answer([war['enemy_clan_name'] for war in wars])
+    for war in wars:
+        if clan_name == war['enemy_clan_name']:
+            war_id = war['war_id']
 
     conn = connect()
     c = conn.cursor()
 
-    c.execute('''DELETE FROM clan_war WHERE war_id = ?''', (wars[user_ans]['war_id'],))
-    c.execute('''DELETE FROM clan_war_battles WHERE war_id = ?''', (wars[user_ans]['war_id'],))
-    c.execute('''DELETE FROM clan_war_members WHERE war_id = ?''', (wars[user_ans]['war_id'],))
+    c.execute('''DELETE FROM clan_war WHERE war_id = ?''', (war_id,))
+    c.execute('''DELETE FROM clan_war_battles WHERE war_id = ?''', (war_id,))
+    c.execute('''DELETE FROM clan_war_members WHERE war_id = ?''', (war_id,))
 
     conn.commit()
     conn.close()
@@ -380,6 +373,7 @@ def remove_clan_war():
 
 def get_clan_wars():
     conn = connect()
+    conn.row_factory = sqlite3.Row
     c = conn.cursor()
 
     c.execute('''SELECT war_id, team_size, start_time, home_clan_name, enemy_clan_name FROM clan_war''')
@@ -387,16 +381,7 @@ def get_clan_wars():
     r = c.fetchall()
     conn.close()
 
-    wars = {}
-
-    for count, item in enumerate(r, 1):
-        wars[count] = {
-            'war_id': item[0],
-            'team_size': item[1],
-            'start_time': item[2],
-            'home_clan_name': item[3],
-            'enemy_clan_name': item[4]
-        }
+    wars = [dict(row) for row in r]
 
     return wars
 
