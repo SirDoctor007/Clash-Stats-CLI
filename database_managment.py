@@ -5,7 +5,6 @@ from main_functions import *
 
 logger = logging.getLogger(__name__)
 
-
 '''
 PRIMARY FUNCTIONS
 '''
@@ -120,7 +119,7 @@ def insert_clan_war(clan_war_obj, verbose=False):
     if get_recorded_status(str(details['start_time'])):
         if verbose:
             print(f'{format_name(details["home_clan_name"])} vs {format_name(details["enemy_clan_name"])} has '
-                        f'already been recorded. Aborting...')
+                  f'already been recorded. Aborting...')
         return -1
 
     conn = connect()
@@ -171,7 +170,7 @@ def insert_clan_war(clan_war_obj, verbose=False):
 
     if verbose:
         print(f'{format_name(details["home_clan_name"])} vs {format_name(details["enemy_clan_name"])} members have '
-                    f'been inserted into clan_war_members')
+              f'been inserted into clan_war_members')
 
     # Inserts the attack details for each member
     for attack in attacks:
@@ -186,7 +185,7 @@ def insert_clan_war(clan_war_obj, verbose=False):
 
     if verbose:
         print(f'{format_name(details["home_clan_name"])} vs {format_name(details["enemy_clan_name"])} attacks have '
-                    f'been inserted into clan_war_battles')
+              f'been inserted into clan_war_battles')
 
         print(f'\nCompleted inserting {clan_war_obj.file_path}!')
 
@@ -200,9 +199,9 @@ def get_war_details(war_id):
     conn = connect()
     c = conn.cursor()
 
-    c.execute('''SELECT team_size, start_time, end_time, home_clan_name, home_clan_level, home_clan_attacks, home_clan_stars,
-                        home_clan_destruction, enemy_clan_name, enemy_clan_level, enemy_clan_attacks, enemy_clan_stars, 
-                        enemy_clan_destruction
+    c.execute('''SELECT team_size, start_time, end_time, home_clan_name, home_clan_level, home_clan_attacks, 
+                        home_clan_stars, home_clan_destruction, enemy_clan_name, enemy_clan_level, enemy_clan_attacks, 
+                        enemy_clan_stars, enemy_clan_destruction
                    FROM clan_war 
                   WHERE war_id = ?''', (str(war_id),))
     r = c.fetchone()
@@ -229,29 +228,17 @@ def get_war_details(war_id):
 
 def get_clan_members_attacks(war_id):
     conn = connect()
+    conn.row_factory = sqlite3.Row
     c = conn.cursor()
 
-    c.execute('''SELECT player_name, townhall_level, map_position, attacks, stars, total_destruction
+    c.execute('''SELECT player_tag, player_name, townhall_level, map_position, attacks, stars, total_destruction
                    FROM clan_war_members 
                   WHERE clan_tag = "#2YC9YR9J" 
                     AND war_id = ?''', (str(war_id),))
     r = c.fetchall()
     conn.close()
 
-    participants = []
-
-    for member in r:
-        member_data = {
-            'player_name': member[0],
-            'townhall_level': member[1],
-            'map_position': member[2],
-            'attacks': member[3],
-            'stars': member[4],
-            'total_destruction': member[5]
-        }
-        participants.append(member_data)
-
-    return participants
+    return [dict(row) for row in r]
 
 
 def get_player_war_data(player_tag):
@@ -266,6 +253,7 @@ def get_player_war_data(player_tag):
     attacks = 0
     stars = 0
     destruction = 0
+    count = int()
 
     for count, item in enumerate(r, 1):
         attacks += item[2]
@@ -298,6 +286,30 @@ def get_player_war_data(player_tag):
         return 0
 
     return player_data
+
+
+def get_individual_clan_war_attacks(player_tag, war_id):
+    conn = connect()
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+
+    c.execute('''SELECT cwm.player_name as defender_name,
+                        cwm.townhall_level,
+                        cwm.map_position,
+                        cwb.stars,
+                        cwb.destruction,
+                        cwb.attack_order
+                   FROM clan_war_battles cwb, clan_war_members cwm
+                  WHERE cwb.war_id = cwm.war_id
+                        AND cwb.defender_tag = cwm.player_tag
+                        AND cwb.war_id = ?
+                        AND cwb.attacker_tag = ?
+               ORDER BY attack_order''', (war_id, player_tag))
+    r = c.fetchall()
+
+    conn.close()
+
+    return [dict(row) for row in r]
 
 
 # Determines if the clan war has already been recorded
@@ -354,6 +366,7 @@ def get_war_ids():
 
 def remove_clan_war():
     wars = get_clan_wars()
+    war_id = str()
 
     clan_name = get_answer([war['enemy_clan_name'] for war in wars])
     for war in wars:
@@ -426,7 +439,7 @@ def insert_players_from_clan(members, verbose=False):
             if verbose:
                 print(f'Inserted {format_name(player["player_name"])}')
         except sqlite3.OperationalError:
-            logger.error(exc_info=True)
+            logger.error('Error while inserting player', exc_info=True)
             if verbose:
                 print('There was an error inserting a clan member. See the error log for more info.')
         except sqlite3.IntegrityError:
@@ -485,7 +498,7 @@ def insert_player_record_data(player_data, verbose=False):
         if verbose:
             print(f'Skipping {format_name(player_data["player_name"])} {player_data["timestamp"]}')
     except sqlite3.OperationalError:
-        logger.error(exc_info=True)
+        logger.error('Error while inserting player record', exc_info=True)
         if verbose:
             print('There was an error inserting player data. See the error log for more info.')
     finally:
@@ -536,6 +549,7 @@ def update_tracked_players():
             tracked_list.append(player['player_name'])
 
     # Adds new players to track
+    player_tag = str()
     for player in answers['players']:
         if player not in tracked_list:
             for p in players:
@@ -830,6 +844,7 @@ def get_league_seasons():
         seasons.append(t[0])
 
     return seasons
+
 
 '''
 Un-used Functions

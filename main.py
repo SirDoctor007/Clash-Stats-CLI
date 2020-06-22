@@ -56,9 +56,8 @@ class Menu:
         choices = [
             'View Tracked Players',
             'View Clan Members',
-            'View Clan War Attacks',
-            'View Player War Stats',
             'View Recorded Clan Wars',
+            'View Clan War',
             'View League War',
             'Go Back',
             'Quit'
@@ -74,12 +73,12 @@ class Menu:
             view_tracked_players()
         elif ans == 'View Clan Members':
             view_clan_members()
-        elif ans == 'View Clan War Attacks':
-            view_war_stats()
-        elif ans == 'View Player War Stats':
-            view_players_war_data()
         elif ans == 'View Recorded Clan Wars':
-            view_recorded_clan_wars()
+            cw = ClanWarViewer()
+            cw.view_recorded_clan_wars()
+        elif ans == 'View Clan War':
+            cw = ClanWarViewer()
+            cw.view_clan_war()
         elif ans == 'View League War':
             view_league_war()
         elif ans == 'Go Back':
