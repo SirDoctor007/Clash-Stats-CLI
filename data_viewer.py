@@ -261,100 +261,78 @@ def view_league_war():
     print(f'    Clan Destruction: {format(stats["total_destruction"] / 700 * 100, ".2f")}%')
     print(t)
 
-    # TODO Add continuation of individual rounds and overall
-    # print('\nEnter a round number to view more details, 8 to view overall and 9 to go back.')
-    # user_ans = int(input('--> '))
-
-
-def view_league_war_round():
-    config = get_config('config.ini')
-
-    clear()
-    banner = pyfiglet.figlet_format('League Round')
-    print(banner)
-    print('Select a Season\n')
-    file = find_file_options(Path(config['INFO']['data_folder'], 'League War'), False, 1)
-    clans, _ = parse_league_war_file(file)
-    clan_list = list()
-    # clans_list = [{'key': enu, 'clan_name': clan['clan_name'], 'clan_id': clan['id']} for enu, clan in enumerate(clans, 1)]
-    # print(clans_list)
-
+    print('\nEnter a round number to view more details, 8 to view overall or 9 to go back.')
     while True:
-        clear()
-        print(banner)
-        print('Select a Clan')
-        for enu, clan in enumerate(clans, 1):
-            print(f'{enu}) {clan["clan_name"]}')
-            clan_list.append((enu, clan['id']))
         try:
             user_ans = int(input('--> '))
-            if user_ans in range(1, enu + 1):
+            if 0 < user_ans < 10:
                 break
-            else:
-                raise ValueError
         except ValueError:
-            print('Not a Valid Answer')
-            _ = input('Press Enter to Try Again...')
+            pass
 
-    for option in clan_list:
-        if option[0] == user_ans:
-            for clan in clans:
-                if clan['id'] == option[1]:
-                    break
+    if user_ans < 8:
+        for war_round in rounds:
+            if war_round['war_round'] == user_ans:
+                members = get_league_war_battles(war_round['war_id'])
+                break
 
-    rounds = get_league_war_rounds(clan['league_season'], clan['clan_tag'])
-    round_list = list()
+        t = pt()
+        t.field_names = ['Player Name', 'Townhall Level', 'Map Position', 'Attacks', 'Stars', 'Destruction',
+                         'Attack Order', 'Opponent Map Position']
+        t.align['Player Name'] = 'l'
 
-    while True:
+        for member in members:
+            if member['clan_tag'] == clan_tag:
+                t.add_row([format_name(member['player_name']), member['townhall_level'], member['map_position'],
+                           member['attacks'],
+                           member['stars'], member['destruction'], member['attack_order'], member['opp_map_position']])
+
         clear()
         print(banner)
-        print('Select a Clan')
-        for enu, war_round in enumerate(rounds, 1):
-            print(f'{enu}) War Round: {war_round["war_round"]}\n'
-                  f'    Opponent: {war_round["opp_name"]}')
-            round_list.append((enu, war_round['war_id']))
-        try:
-            user_ans = int(input('--> '))
-            if user_ans in range(1, enu + 1):
-                break
-            else:
-                raise ValueError
-        except ValueError:
-            print('Not a Valid Answer')
-            _ = input('Press Enter to Try Again...')
+        print(f'War Round: {war_round["war_round"]}')
+        print(f'Start Time: {war_round["start_time"]}')
+        print(f'End Time: {war_round["end_time"]}')
+        print(f'Clan Name: {war_round["clan_name"]}')
+        print(f'    Clan Attacks: {war_round["clan_attacks"]}')
+        print(f'    Clan Stars: {war_round["clan_stars"]}')
+        print(f'    Clan Destruction: {war_round["clan_destruction"]}')
+        print(f'Opponent: {war_round["opp_name"]}')
+        print(f'    Clan Attacks: {war_round["opp_attacks"]}')
+        print(f'    Clan Stars: {war_round["opp_stars"]}')
+        print(f'    Clan Destruction: {war_round["opp_destruction"]}')
+        print(t)
 
-    for option in round_list:
-        if option[0] == user_ans:
-            for war_round in rounds:
-                if war_round['war_id'] == option[1]:
-                    break
+    elif user_ans == 8:
 
-    members = get_league_war_battles(war_round['war_id'])
+        players = list()
 
-    t = pt()
-    t.field_names = ['Player Name', 'Townhall Level', 'Map Position', 'Attacks', 'Stars', 'Destruction',
-                     'Attack Order', 'Opponent Map Position']
-    t.align['Player Name'] = 'l'
-    for member in members:
-        if member['clan_tag'] == clan['clan_tag']:
-            t.add_row([format_name(member['player_name']), member['townhall_level'], member['map_position'], member['attacks'],
-                       member['stars'], member['destruction'], member['attack_order'], member['opp_map_position']])
+        for war_round in rounds:
+            members = get_league_war_battles(war_round['war_id'])
+            for member in members:
+                if member['clan_tag'] == clan_tag:
+                    found = False
+                    for player in players:
+                        if member['player_tag'] == player['player_tag']:
+                            player['attacks'] += member['attacks']
+                            player['stars'] += member['stars']
+                            player['destruction'] += member['destruction']
+                            found = True
+                            break
+                    if not found:
+                        players.append(member)
 
-    clear()
-    print(banner)
-    print(f'War Round: {war_round["war_round"]}')
-    print(f'Start Time: {war_round["start_time"]}')
-    print(f'End Time: {war_round["end_time"]}')
-    print(f'Clan Name: {war_round["clan_name"]}')
-    print(f'    Clan Attacks: {war_round["clan_attacks"]}')
-    print(f'    Clan Stars: {war_round["clan_stars"]}')
-    print(f'    Clan Destruction: {war_round["clan_destruction"]}')
-    print(f'Opponent: {war_round["opp_name"]}')
-    print(f'    Clan Attacks: {war_round["opp_attacks"]}')
-    print(f'    Clan Stars: {war_round["opp_stars"]}')
-    print(f'    Clan Destruction: {war_round["opp_destruction"]}')
-    print(t)
+        t = pt()
+        t.field_names = ['Player Name', 'Townhall Level', 'Attacks', 'Stars', 'Destruction']
 
-    return 0
+        for player in players:
+            t.add_row([format_name(player['player_name']), player['townhall_level'], f'{player["attacks"]}/7',
+                       f'{player["stars"]}/21', f'{format(player["destruction"] / 700 * 100, ".1f")}%'])
 
+        clear()
+        banner = pyfiglet.figlet_format('Overall Stats')
+        print(banner)
+        print(f'League War Season: {season}')
+        print(f'Clan Name: {war_round["clan_name"]}')
+        print(t)
 
+        # TODO Add a top and bottom performers view

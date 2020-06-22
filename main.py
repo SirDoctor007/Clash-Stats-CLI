@@ -60,7 +60,6 @@ class Menu:
             'View Player War Stats',
             'View Recorded Clan Wars',
             'View League War',
-            'View League War Round',
             'Go Back',
             'Quit'
         ]
@@ -83,8 +82,6 @@ class Menu:
             view_recorded_clan_wars()
         elif ans == 'View League War':
             view_league_war()
-        elif ans == 'View League War Round':
-            view_league_war_round()
         elif ans == 'Go Back':
             self.main_menu()
         elif ans == 'Quit':

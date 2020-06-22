@@ -822,8 +822,8 @@ def get_league_war_battles(war_id):
                     if opponent['player_tag'] == battle['defender_tag']:
                         member['opp_map_position'] = opponent['map_position']
         if not found:
-            member['stars'] = 'N/A'
-            member['destruction'] = 'N/A'
+            member['stars'] = 0
+            member['destruction'] = 0
             member['attack_order'] = 'N/A'
             member['opp_map_position'] = 'N/A'
 
