@@ -164,7 +164,7 @@ class ClanWar:
                 self.status = False
                 return -1
             else:
-                if get_recorded_status(str(content['start_time'])):
+                if get_recorded_status(convert_timestamp(content['startTime'])):
                     self.status = False
                     print('This war has already been collected, aborting...')
                 else:

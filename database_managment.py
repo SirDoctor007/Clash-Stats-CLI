@@ -314,6 +314,7 @@ def get_individual_clan_war_attacks(player_tag, war_id):
 
 # Determines if the clan war has already been recorded
 def get_recorded_status(start_time):
+    start_time = str(start_time)
     conn = connect()
     c = conn.cursor()
 
