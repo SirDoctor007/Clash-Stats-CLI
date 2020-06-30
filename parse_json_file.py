@@ -17,13 +17,18 @@ def parse_player_file(file_path):
     file_path = str(file_path)[str(file_path).find('Player') + 7:]
     split = file_path.split('_')
 
+    try:
+        league = data['league']['name']
+    except KeyError:
+        league = 'N/A'
+
     player_data = {'id': f'{data["timestamp"]}_{data["tag"]}',
                    'timestamp': data['timestamp'],
                    'player_tag': data['tag'],
                    'player_name': data['name'],
                    'townhall_level': data['townHallLevel'],
                    'exp_level': data['expLevel'],
-                   'league': data['league']['name'],
+                   'league': league,
                    'trophies': data['trophies'],
                    'best_trophies': data['bestTrophies'],
                    'war_stars': data['warStars'],
