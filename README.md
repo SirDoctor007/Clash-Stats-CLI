@@ -10,7 +10,7 @@ Using Python Virtual Environment
 * Windows/Linux: Run the command ``python3 -m venv venv`` in the root directory of the project
 * The next step is to activate the virtual environment. Run one of the below commands depending on your system.
     * Windows: ``venv\Scripts\activate``
-    * Debian: ``source venv\Scripts\activate``
+    * Debian: ``source venv\bin\activate``
 * Once the Virtual Environment is activated, run ``pip install -r requirments.txt``
 * You should now be able to run the program by typing ``python main.py``
 
