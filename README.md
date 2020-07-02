@@ -1,5 +1,5 @@
 
-#Clash-Stats-CLI
+# Clash-Stats-CLI
 The goal of this project is to create a way to easily collect and view Clash of Clans Stats for players and Clans.
 
 This program was developed and tested using python 3.7 on Windows. Results my vary based on version and system.
@@ -17,4 +17,4 @@ Using Python Virtual Environment
 **Obligatory Notice:**
 
 * This content is not affiliated with, endorsed, sponsored, or specifically approved by Supercell and Supercell is not 
-responsible for it. For more information see Supercell’s Fan Content Policy: www.supercell.com/fan-content-policy.
+responsible for it. For more information see Supercellâ€™s Fan Content Policy: www.supercell.com/fan-content-policy.
