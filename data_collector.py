@@ -259,8 +259,7 @@ class LeagueWar:
             for pos, war in enumerate(self.wars):
                 if war['war_tag'] not in processed_wars:
                     url = self.config['INFO']['clan_url'][:-6] + 'clanwarleagues/wars/' + requests.utils.quote(war['war_tag'])
-                    headers = {'Accept': 'application/json',
-                               'authorization': base64.b64decode(self.config['INFO']['token']).decode()}
+                    headers = get_headers()
 
                     r = requests.get(url, headers=headers)
 
