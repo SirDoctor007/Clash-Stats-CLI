@@ -1,10 +1,16 @@
 import configparser
 import logging.handlers
 from pathlib import Path
+from main_functions import get_config
+from setup import setup
+
+# If the database does not exist run the setup script
+config = get_config('database.ini')
+if not Path.is_file(Path(config['INFO']['database_name'])):
+    setup()
 
 # Sets up logging information
-config = configparser.ConfigParser()
-config.read(Path('Config', 'config.ini'))
+config = get_config('config.ini')
 max_bytes = int(config['LOGGING']['max_bytes'])
 backup_count = int(config['LOGGING']['backup_count'])
 logging_level = config['LOGGING']['file_logging_level']
