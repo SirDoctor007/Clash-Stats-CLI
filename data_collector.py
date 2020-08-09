@@ -334,3 +334,6 @@ class LeagueWar:
         insert_league_war_data(self, verbose=True)
 
 
+if __name__ == "__main__":
+    player_data = PlayerData('get')
+    player_data.submit_to_database()
